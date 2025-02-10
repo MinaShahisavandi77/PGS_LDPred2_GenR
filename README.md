@@ -12,9 +12,7 @@ library(bigsnpr)
  Obtain HapMap3 SNPs and LD correlation matrix downloadable at https://ndownloader.figshare.com/files/25503788
  Use https://figshare.com/ndownloader/files/37802721 for HapMap3+ variants
 info <- readRDS("/path/to/map.rds") # retrieved from https://figshare.com/articles/dataset/European_LD_reference/13034123?file=25503788
-#########################################
- LOAD AND TRANSFORM SUMMARY STATISTICS #
-#########################################
+
 
  Read in the summary statistic file
 sumstats_all <- bigreadr::fread2("/path/to/summary_statistics.txt") 
@@ -38,14 +36,14 @@ sumstats <- data.frame(chr= sumstats_all$CHROM,
 )
 
 
-# If OR is provided instead of beta, transform the OR into log(OR)
+ If OR is provided instead of beta, transform the OR into log(OR)
 sumstats$beta <- log(sumstats$OR)
 
-# In case of binary trait with separate N for cases and controls
+ In case of binary trait with separate N for cases and controls
 sumstats$n_eff <- 4 / (1 / sumstats$n_case + 1 / sumstats$n_control)
 sumstats$n_case <- sumstats$n_control <- NULL
 
-# Filter out HapMap3 SNPs
+ Filter out HapMap3 SNPs
 sumstats <- sumstats[sumstats$rsid %in% info$rsid,] 
 
 
