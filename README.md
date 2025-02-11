@@ -9,7 +9,7 @@ To run this script you need :
 - An LD (linkage disequilibrium) matrix derived from individuals sharing the same genetic ancestry as those included in the GWAS.Here we used the [hapmap+LD](https://ndownloader.figshare.com/files/25503788) 
 refrence that can be downloaded from .
 - Remember that partitioning LD matrices into independent LD blocks can enhance robustness and significantly improve computational efficiency based on [this papar](https://www.sciencedirect.com/science/article/pii/S2666247722000525?via%3Dihub).
---
+---
 This script concists og multiple steps 
 Step1 : loading and matching 
  Load the required packages
