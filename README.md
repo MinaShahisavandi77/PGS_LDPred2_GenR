@@ -6,6 +6,8 @@ To run this script you need :
 This script concists og multiple steps 
 Step1 : loading and matching 
 # Load the required packages
+./R
+
 library(bigsnpr)
 
 
