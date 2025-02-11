@@ -1,4 +1,4 @@
- PGS_LDPred2_GenR
+ #PGS_LDPred2_GenR
 This repository was made based on Polygenic scores and inference using LDpred2 tutorial by Florian Privé. However we made some changes based on our need for calculating Poly Genetic risk score here in Generation R study.
 To run this script you need : 
 1.Summary statistics of the trait. This summary statistics should contain marginal effect sizes, their standard errors, and the corresponding sample size(s).
