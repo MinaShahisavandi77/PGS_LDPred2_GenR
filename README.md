@@ -58,31 +58,30 @@ sumstats$n_case <- sumstats$n_control <- NULL
 #Filter out HapMap3 SNPs
 sumstats <- sumstats[sumstats$rsid %in% info$rsid,] 
 
-
-
 ```
-duplicates need to be remove! it is important to always check ! 
+Duplicates SNPs need to be removed! it is important to always check ! 
 ```
- # Remove duplicates based on 'rsid' and create a clean dataset
+# Remove duplicates based on 'rsid' and create a clean dataset
 table(duplicated(sumstats$rsid))
 sumstats <- sumstats[!duplicated(sumstats$rsid), ]
-# Filter out HapMap3 SNPs
+```
+ Filter out HapMap3 SNPs
+```
 sumstats <- sumstats[sumstats$rsid %in% info$rsid,]
 #filter out the variants with low sample size 
 max_sample_size <- max(sumstats$n_eff)
-
-# Set a threshold for minimum sample size
+```
+ Set a threshold for minimum sample size
+```
 threshold <- 0.7 * max_sample_size
-
 # Filter variants that have a sample size below the threshold
 filtered_sumstats <- sumstats[sumstats$n_eff >= threshold, ]
 
 # Output the filtered variants
 #write.table(filtered_variants, file="filtered_variants.txt", quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
-##########################################################
-# MATCH VARIANTS BETWEEN GENOTYPE AND SUMMARY STATISTICS #
-##########################################################
-
+```
+ Match the variables of the summary statistics with genotype 
+```
 # Extract the SNP information from the genotype
 map <- data.frame(chr= info$chr,
                   rsid= info$rsid,
@@ -97,18 +96,18 @@ map$chr <- as.character(map$chr)
 df_beta <- snp_match(filtered_sumstats, map)
 ```
 ---
-STEP 2:QC
+Step 2:QC
 
-1.Filter based on the differences between standard deviations of allele frequencies between UKBB genotypes and SUMSTATS
+Filter based on the differences between standard deviations of allele frequencies between UKBB genotypes and SUMSTATS
 1.	Create [info_snp] = [info] restricted to [sumstats]
 2.	Create a var called [sd_ldref] directly by extracting allele info from [info_snp] 
 3.	Calculate [sd_ss] by extracting beta and beta_se from [df_beta] and calculating [sd_y] (for continuous traits by using a formula (the estimate should be a number around 1)
 
 ```
 
-###################################################
+
 # IF YOU WANT TO PERFORM QC OF SUMMARY STATISTICS #
-###################################################
+
 
 info_snp <- tidyr::drop_na(tibble::as_tibble(info))
 info_snp<- info[info$rsid %in% df_beta$rsid,]
@@ -127,7 +126,7 @@ sd_ss <- with(df_beta, 2 / sqrt(n_eff * beta_se^2 + beta^2))
 sd_ldref <- sd_ldref[1:length(sd_ss)]
 is_bad <- sd_ss < (0.5 * sd_ldref) | sd_ss > (sd_ldref + 0.1) | sd_ss < 0.05 | sd_ldref < 0.05
 ```
-check the graph for removed SNPs
+you can check via the graph for removed SNPs
 ```
 library(ggplot2)
 qplot(sd_ldref, sd_ss, color = is_bad, alpha = I(0.5)) +
@@ -145,12 +144,12 @@ df_beta_no_qc <- df_beta
 df_beta <- df_beta[!is_bad, ]
 #str(df_beta)
 ```
-STEP 3:
+Step 3:
 LDPRED correlations using blocks
 ```
-######################################
+
 # COMPUTE LDpred2 SCORES GENOME-WIDE #
-######################################
+
 
 # Create a correlation matrix
 
@@ -178,7 +177,7 @@ for (chr in 1:22) {
 }
 
 ```
-STEP4: 
+Step 4: 
 Heritability estimate
 
 ```
@@ -205,9 +204,9 @@ Step 5
 LDPRED auto
  ```
 
-############################################################
+
 # ESTIMATE ADJUSTED BETAS WITH THE LDpred2 AUTOMATIC MODEL #
-############################################################
+
 
 coef_shrink <- 0.4  # Reduce this up to 0.4 if you have some (large) mismatch with the LD ref
 
@@ -224,8 +223,10 @@ multi_auto <- snp_ldpred2_auto(corr,
 str(multi_auto, max.level = 1)                               
 str(multi_auto[[1]], max.level = 1)
 ```
-Step 6: CHECK CONVERGENCE CHAINS + FILTER 
-Plot chains from multi.auto (check if they look good)
+Step 6: Check Convergence and Filter
+Plot Chains from multi.auto: Verify if the chains converge properly and look good.
+Apply Filtering: Ensure only well-converged chains are retained for subsequent analyses.
+
 ```
 # Verify whether the chains “converged” by looking at the path of the chains
 library(ggplot2)
@@ -244,11 +245,11 @@ plot_grid(
 
 ggsave("SCZ2.png")
 ```
-STEP 7 : BETAS
+Step 7 : BETAS
 
  Filter the chains and check for valid 'beta_est'
 
- In the LDpred2 paper, we proposed an automatic way of filtering bad chains by comparing the scale of the resulting predictions.
+ In the LDpred2 paper, it proposed an automatic way of filtering bad chains by comparing the scale of the resulting predictions.
  Here we recommend an equivalent and simpler alternative:
 ```
 range <- sapply(multi_auto, function(auto) diff(range(auto$corr_est)))
@@ -286,7 +287,7 @@ Please note that if you are using Windows OS and Mac OS, you can run PLINK from 
 
 
 
-# CALCULATE POLYGENIC RISK SCORES #
+# Calculate the polygenic risk score 
 
 
 Once you have installed PLINK, you can obtain PRSs for your data using the following command (example for Linux OS):
