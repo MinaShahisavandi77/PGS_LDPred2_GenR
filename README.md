@@ -10,7 +10,7 @@ To run this script you need :
 LD refrence.
 - Remember that partitioning LD matrices into independent LD blocks can enhance robustness and significantly improve computational efficiency based on [this papar](https://www.sciencedirect.com/science/article/pii/S2666247722000525?via%3Dihub).
 ---
-This script concists of multiple steps
+This script consists of multiple steps
 -
 Step1 : loading and matching
 
