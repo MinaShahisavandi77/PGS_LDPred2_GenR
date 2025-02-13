@@ -57,9 +57,146 @@ sumstats <- sumstats[sumstats$rsid %in% info$rsid,]
 
 
 ```
+duplicates need to be remove! it is important to always check ! 
+```
+ # Remove duplicates based on 'rsid' and create a clean dataset
+table(duplicated(sumstats$rsid))
+sumstats <- sumstats[!duplicated(sumstats$rsid), ]
+# Filter out HapMap3 SNPs
+sumstats <- sumstats[sumstats$rsid %in% info$rsid,]
+#filter out the variants with low sample size 
+max_sample_size <- max(sumstats$n_eff)
 
- 
- 
+# Set a threshold for minimum sample size
+threshold <- 0.7 * max_sample_size
+
+# Filter variants that have a sample size below the threshold
+filtered_sumstats <- sumstats[sumstats$n_eff >= threshold, ]
+
+# Output the filtered variants
+#write.table(filtered_variants, file="filtered_variants.txt", quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+##########################################################
+# MATCH VARIANTS BETWEEN GENOTYPE AND SUMMARY STATISTICS #
+##########################################################
+
+# Extract the SNP information from the genotype
+map <- data.frame(chr= info$chr,
+                  rsid= info$rsid,
+                  pos= info$pos,
+                  a1= info$a1,
+                  a0= info$a0)
+
+# Perform SNP matching
+filtered_sumstats$chr <- as.character(filtered_sumstats$chr)
+map$chr <- as.character(map$chr)
+
+df_beta <- snp_match(filtered_sumstats, map)
+```
+---
+STEP 2:QC
+
+1.Filter based on the differences between standard deviations of allele frequencies between UKBB genotypes and SUMSTATS
+1.	Create [info_snp] = [info] restricted to [sumstats]
+2.	Create a var called [sd_ldref] directly by extracting allele info from [info_snp] 
+3.	Calculate [sd_ss] by extracting beta and beta_se from [df_beta] and calculating [sd_y] (for continuous traits by using a formula (the estimate should be a number around 1)
+
+```
+
+###################################################
+# IF YOU WANT TO PERFORM QC OF SUMMARY STATISTICS #
+###################################################
+
+info_snp <- tidyr::drop_na(tibble::as_tibble(info))
+info_snp<- info[info$rsid %in% df_beta$rsid,]
+
+# Better to use af of GWAS and INFO scores as well (then can use 0.7 instead of 0.5 in L35)
+sd_ldref <- with(info_snp, sqrt(2 * af_UKBB * (1 - af_UKBB)))
+
+# IF BINARY TRAIT
+sd_ss <- with(df_beta, 2 / sqrt(n_eff * beta_se^2 + beta^2))
+
+# IF CONTINUOUS TRAIT
+#sd_y = with(df_beta, sqrt(quantile(0.5 * (n_eff * beta_se^2 + beta^2), 0.01)))
+#sd_ss = with(df_beta, sd_y / sqrt(n_eff * beta_se^2 + beta^2))
+
+# Estimate SNPs to remove
+sd_ldref <- sd_ldref[1:length(sd_ss)]
+is_bad <- sd_ss < (0.5 * sd_ldref) | sd_ss > (sd_ldref + 0.1) | sd_ss < 0.05 | sd_ldref < 0.05
+```
+check the graph for removed SNPs
+```
+library(ggplot2)
+qplot(sd_ldref, sd_ss, color = is_bad, alpha = I(0.5)) +
+  theme_bigstatsr() +
+  coord_equal() +
+  scale_color_viridis_d(direction = -1) +
+  geom_abline(linetype = 2, color = "red") +
+  labs(x = "SD from allele frequencies of the LD reference",
+       y = "SD from summary statistics",
+       color = "Removed?")
+ggsave("SCZ1.png") 
+```
+```
+df_beta_no_qc <- df_beta
+df_beta <- df_beta[!is_bad, ]
+#str(df_beta)
+```
+STEP 3:
+LDPRED correlations using blocks
+```
+######################################
+# COMPUTE LDpred2 SCORES GENOME-WIDE #
+######################################
+
+# Create a correlation matrix
+
+NCORES <- nb_cores()
+tmp <- tempfile(tmpdir = "temp/")
+
+for (chr in 1:22) {
+  
+  cat(chr, ".. ", sep = "")
+  
+  ## indices in 'df_beta'
+  ind.chr <- which(df_beta$chr == chr)
+  ## indices in 'map_ldref'
+  ind.chr2 <- df_beta$`_NUM_ID_`[ind.chr]
+  ## indices in 'corr_chr'
+  ind.chr3 <- match(ind.chr2, which(map$chr == chr))
+  
+  corr_chr <- readRDS(paste0("ldref/LD_with_blocks_chr", chr, ".rds"))[ind.chr3, ind.chr3] # "LD_chr" folder includes LD blocks retrieved from: https://figshare.com/articles/dataset/European_LD_reference_with_blocks_/19213299/1?file=34133082
+  
+  if (chr == 1) {
+    corr <- as_SFBM(corr_chr, tmp, compact = TRUE)
+  } else {
+    corr$add_columns(corr_chr, nrow(corr))
+  }
+}
+
+```
+STEP4: 
+Heritability estimate
+
+```
+# Estimate h2 from LD Score regression
+
+# Perform matching
+matched_indices <- match(df_beta$rsid, info$rsid)
+
+# Filter out NAs from the matched indices
+valid_indices <- !is.na(matched_indices)
+
+# Update df_beta and ld to contain only valid (non-NA) SNPs
+df_beta <- df_beta[valid_indices, ]
+ld <- info[matched_indices[valid_indices], ]
+
+ldsc <- with(df_beta, snp_ldsc(ld$ld, length(ld$ld), chi2 = (beta / beta_se)^2,
+                               sample_size = n_eff, blocks = NULL))
+ldsc_h2_est <- ldsc[["h2"]]
+
+ldsc_h2_est
+
+ ```
 
 
 
