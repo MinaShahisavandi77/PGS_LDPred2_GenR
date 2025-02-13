@@ -279,36 +279,39 @@ adjusted_betas_reverse <- data.frame(CHR= df_beta$chr,
 # For PLINK format, we use "adjusted beta reverse" because PLINK assumes A1 as effect allele and A2 as other allele
 write.table(adjusted_betas_reverse, "SCZ_adjusted_weights.txt", sep="\t", dec =".", quote= FALSE, row.names=FALSE, col.names= FALSE)
 ```
-To calculate PRSs for each given phenotype, you can use PLINK. To download PLINK:
-	- Windows OS and MacOS: you can download and install it from https://www.cog-genomics.org/plink/
-	- Linux OS: you can directly install it from the terminal by typing "sudo apt install plink1.9"
+To calculate PRSs for each given phenotype, you can use PLINK.
 
-Please note that if you are using Windows OS and Mac OS, you can run PLINK from the terminals while having the executable file (e.g., "plink.exe" or "plink") in the same working directory of the weights files.
-
-
+How to Download and Install PLINK:
+Windows OS and macOS: Download and install it from the official PLINK website.
+Linux OS: Install it directly from the terminal by typing:
+```
+sudo apt install plink1.9
+```
+Important Notes:
+If you are using Windows OS or macOS, you can run PLINK from the terminal. Ensure the PLINK executable file (e.g., plink.exe or plink) is in the same working directory as your weight files.
 
 # Calculate the polygenic risk score 
-
 
 Once you have installed PLINK, you can obtain PRSs for your data using the following command (example for Linux OS):
 ```
 	plink1.9 --bfile my_genetic_data --score my_scores.txt 3 4 6 sum --out output_filename
 ```
-Where:
-	- "my_genetic_data" = file name (without extension) of your genetic data after your QC and imputation protocols.
-	- "my_scores.txt" = file name (with extension) of the provided adjusted weights.
-	- "output_filename" = file name (without extension) of the desired output files.
-	- "3 4 6" = columns corresponding to SNPID, Effect allele, and Adjusted weigths, respectively.
-	- "sum" = option to calculate PRSs as the sum of valid per-allele scores (instead of the mean, which is calculated as default).
+Explanation of Parameters:
 
-Please note that the input file "my_genetic_data" must be in PLINK format (i.e., you should have the .bim, .bed, and .fam versions of the file).
-If you have a VCF file, you can convert it in PLINK format with the following command:
-	plink1.9 --vcf my_genetic_data.vcf.gz --keep-allele-order --make-bed --out my_genetic_data
+- my_genetic_data: File name (without extension) of your genetic data after applying QC and imputation protocols.
+- my_scores.txt: File name (with extension) of the provided adjusted weights.
+- output_filename: Desired file name (without extension) for the output.
+- 3 4 6: Columns representing the SNP ID, effect allele, and adjusted weights, respectively.
+- sum: Option to calculate PRSs as the sum of valid per-allele scores (instead of the default mean).
 
-For detailed information about PLINK commands and flags, please see: https://www.cog-genomics.org/plink/1.9/index
+Important Note:
+The input file my_genetic_data must be in PLINK format (.bim, .bed, and .fam).
 
-
-
+If your genetic data is in VCF format, you can convert it to PLINK format using the following command:
+```
+plink1.9 --vcf my_genetic_data.vcf.gz --keep-allele-order --make-bed --out my_genetic_data
+```
+For a comprehensive guide on PLINK commands and flags, visit the PLINK documentation.
  
 
  
