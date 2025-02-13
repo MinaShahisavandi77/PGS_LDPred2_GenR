@@ -26,7 +26,7 @@ Use https://figshare.com/ndownloader/files/37802721 for HapMap3+ variants
 info <- readRDS("/path/to/map.rds") # retrieved from https://figshare.com/articles/dataset/European_LD_reference/13034123?file=25503788
 ```
 
-Read in the summary statistic file
+Read in the summary statistics file
 ```
 sumstats_all <- bigreadr::fread2("/path/to/summary_statistics.txt") 
 
