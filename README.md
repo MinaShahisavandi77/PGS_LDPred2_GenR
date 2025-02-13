@@ -3,7 +3,7 @@
 This repository was made based on Polygenic scores and inference using LDpred2 tutorial by Florian Privé.
 - Florian Privé, Julyan Arbel, Bjarni J Vilhjálmsson, LDpred2: better, faster, stronger, Bioinformatics, Volume 36, Issue 22-23, 1 December 2020, Pages 5424–5431, <https://doi.org/10.1093/bioinformatics/btaa1029>
 ---
-However we made some changes based on our need for calculating Poly Genetic risk score here in Generation R study.
+However, we made some modifications based on our needs for calculating the Polygenic Risk Score (PRS) in the Generation R study.
 To run this script you need : 
 - Summary statistics of the trait. This summary statistics should contain marginal effect sizes, their standard errors, and the corresponding sample size(s).
 - An LD (linkage disequilibrium) matrix derived from individuals sharing the same genetic ancestry as those included in the GWAS.Here we used the [HapMap3+](https://ndownloader.figshare.com/files/25503788) 
@@ -13,17 +13,21 @@ LD refrence.
 This script concists of multiple steps
 -
 Step1 : loading and matching
+
+Load the required packages
 ```
-#Load the required packages
-
 library(bigsnpr)
-
-#Obtain HapMap3 SNPs and LD correlation matrix downloadable at https://ndownloader.figshare.com/files/25503788
-#Use https://figshare.com/ndownloader/files/37802721 for HapMap3+ variants
-
+```
+```
+Obtain HapMap3 SNPs and LD correlation matrix downloadable at https://ndownloader.figshare.com/files/25503788
+Use https://figshare.com/ndownloader/files/37802721 for HapMap3+ variants
+```
+```
 info <- readRDS("/path/to/map.rds") # retrieved from https://figshare.com/articles/dataset/European_LD_reference/13034123?file=25503788
+```
 
-#Read in the summary statistic file
+Read in the summary statistic file
+```
 sumstats_all <- bigreadr::fread2("/path/to/summary_statistics.txt") 
 
 #Select the needed variables
@@ -197,6 +201,110 @@ ldsc_h2_est <- ldsc[["h2"]]
 ldsc_h2_est
 
  ```
+Step 5 
+LDPRED auto
+ ```
+
+############################################################
+# ESTIMATE ADJUSTED BETAS WITH THE LDpred2 AUTOMATIC MODEL #
+############################################################
+
+coef_shrink <- 0.4  # Reduce this up to 0.4 if you have some (large) mismatch with the LD ref
+
+set.seed(42)  # to get the same result every time
+
+# Can take minutes to hours
+multi_auto <- snp_ldpred2_auto(corr,
+                               df_beta,
+                               h2_init = ldsc_h2_est,
+                               vec_p_init = seq_log(1e-4, 0.9, length.out = NCORES), # 0.2 as tutorial, 0.9 as in the paper
+                               ncores = 42,
+                               #use_MLE = FALSE,  # uncomment if you have convergence issues or when power is low (need v1.11.9)
+                               allow_jump_sign = FALSE, shrink_corr = coef_shrink)
+str(multi_auto, max.level = 1)                               
+str(multi_auto[[1]], max.level = 1)
+```
+Step 6: CHECK CONVERGENCE CHAINS + FILTER 
+Plot chains from multi.auto (check if they look good)
+```
+# Verify whether the chains “converged” by looking at the path of the chains
+library(ggplot2)
+auto <- multi_auto[[1]]  # first chain
+plot_grid(
+  qplot(y = auto$path_p_est) + 
+    theme_bigstatsr() + 
+    geom_hline(yintercept = auto$p_est, col = "blue") +
+    scale_y_log10() +
+    labs(y = "p"),
+  qplot(y = auto$path_h2_est) + 
+    theme_bigstatsr() + 
+    geom_hline(yintercept = auto$h2_est, col = "blue") +
+    labs(y = "h2"),
+  ncol = 1, align = "hv")
+
+ggsave("SCZ2.png")
+```
+STEP 7 : BETAS
+
+ Filter the chains and check for valid 'beta_est'
+
+ In the LDpred2 paper, we proposed an automatic way of filtering bad chains by comparing the scale of the resulting predictions.
+ Here we recommend an equivalent and simpler alternative:
+```
+range <- sapply(multi_auto, function(auto) diff(range(auto$corr_est)))
+keep <- which(range > (0.95 * quantile(range, 0.95, na.rm = TRUE)))
+
+# To get the final effects you should only use chains that pass this filtering
+beta_auto_means <- rowMeans(sapply(multi_auto[keep], function(auto) auto$beta_est))
+```
+Step 8 
+Calculate PGS using genotype data
+
+```
+# Save adjusted betas
+adjusted_betas <- data.frame(CHR= df_beta$chr,
+                             POS= df_beta$pos,
+                             RSID = df_beta$rsid,
+                             A0= df_beta$a0,
+                             A1= df_beta$a1,
+                             BETA_ADJ = beta_auto_means)
+adjusted_betas_reverse <- data.frame(CHR= df_beta$chr,
+                                     POS= df_beta$pos,
+                                     RSID = df_beta$rsid,
+                                     A1= df_beta$a1,
+                                     A2= df_beta$a0,
+                                     BETA_ADJ = beta_auto_means)
+
+# For PLINK format, we use "adjusted beta reverse" because PLINK assumes A1 as effect allele and A2 as other allele
+write.table(adjusted_betas_reverse, "SCZ_adjusted_weights.txt", sep="\t", dec =".", quote= FALSE, row.names=FALSE, col.names= FALSE)
+```
+To calculate PRSs for each given phenotype, you can use PLINK. To download PLINK:
+	- Windows OS and MacOS: you can download and install it from https://www.cog-genomics.org/plink/
+	- Linux OS: you can directly install it from the terminal by typing "sudo apt install plink1.9"
+
+Please note that if you are using Windows OS and Mac OS, you can run PLINK from the terminals while having the executable file (e.g., "plink.exe" or "plink") in the same working directory of the weights files.
+
+
+
+# CALCULATE POLYGENIC RISK SCORES #
+
+
+Once you have installed PLINK, you can obtain PRSs for your data using the following command (example for Linux OS):
+```
+	plink1.9 --bfile my_genetic_data --score my_scores.txt 3 4 6 sum --out output_filename
+```
+Where:
+	- "my_genetic_data" = file name (without extension) of your genetic data after your QC and imputation protocols.
+	- "my_scores.txt" = file name (with extension) of the provided adjusted weights.
+	- "output_filename" = file name (without extension) of the desired output files.
+	- "3 4 6" = columns corresponding to SNPID, Effect allele, and Adjusted weigths, respectively.
+	- "sum" = option to calculate PRSs as the sum of valid per-allele scores (instead of the mean, which is calculated as default).
+
+Please note that the input file "my_genetic_data" must be in PLINK format (i.e., you should have the .bim, .bed, and .fam versions of the file).
+If you have a VCF file, you can convert it in PLINK format with the following command:
+	plink1.9 --vcf my_genetic_data.vcf.gz --keep-allele-order --make-bed --out my_genetic_data
+
+For detailed information about PLINK commands and flags, please see: https://www.cog-genomics.org/plink/1.9/index
 
 
 
