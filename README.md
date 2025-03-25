@@ -208,7 +208,7 @@ LDPRED auto
 # ESTIMATE ADJUSTED BETAS WITH THE LDpred2 AUTOMATIC MODEL #
 
 
-coef_shrink <- 0.4  # Reduce this up to 0.4 if you have some (large) mismatch with the LD ref
+coef_shrink <- 0.95  # Reduce this up to 0.4 if you have some (large) mismatch with the LD ref
 
 set.seed(42)  # to get the same result every time
 
