@@ -109,7 +109,7 @@ Filter based on the differences between standard deviations of allele frequencie
 # IF YOU WANT TO PERFORM QC OF SUMMARY STATISTICS #
 
 
-info_snp <- tidyr::drop_na(tibble::as_tibble(info))
+#info_snp <- tidyr::drop_na(tibble::as_tibble(info))
 info_snp<- info[info$rsid %in% df_beta$rsid,]
 
 # Better to use af of GWAS and INFO scores as well (then can use 0.7 instead of 0.5 in L35)
@@ -137,7 +137,7 @@ qplot(sd_ldref, sd_ss, color = is_bad, alpha = I(0.5)) +
   labs(x = "SD from allele frequencies of the LD reference",
        y = "SD from summary statistics",
        color = "Removed?")
-ggsave("SCZ1.png") 
+ggsave("QC1.png") 
 ```
 ```
 df_beta_no_qc <- df_beta
@@ -243,7 +243,7 @@ plot_grid(
     labs(y = "h2"),
   ncol = 1, align = "hv")
 
-ggsave("SCZ2.png")
+ggsave("chains.png")
 ```
 Step 7 : BETAS
 
@@ -277,7 +277,7 @@ adjusted_betas_reverse <- data.frame(CHR= df_beta$chr,
                                      BETA_ADJ = beta_auto_means)
 
 # For PLINK format, we use "adjusted beta reverse" because PLINK assumes A1 as effect allele and A2 as other allele
-write.table(adjusted_betas_reverse, "SCZ_adjusted_weights.txt", sep="\t", dec =".", quote= FALSE, row.names=FALSE, col.names= FALSE)
+write.table(adjusted_betas_reverse, "PRS_adjusted_weights.txt", sep="\t", dec =".", quote= FALSE, row.names=FALSE, col.names= FALSE)
 ```
 To calculate PRSs for each given phenotype, you can use PLINK.
 
