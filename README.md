@@ -140,7 +140,7 @@ qplot(sd_ldref, sd_ss, color = is_bad, alpha = I(0.5)) +
 ggsave("QC1.png") 
 ```
 ```
-df_beta_no_qc <- df_beta
+#df_beta_no_qc <- df_beta  # if you want to skip the QC steps
 df_beta <- df_beta[!is_bad, ]
 #str(df_beta)
 ```
