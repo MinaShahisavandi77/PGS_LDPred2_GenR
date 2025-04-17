@@ -90,8 +90,8 @@ map <- data.frame(chr= info$chr,
                   a0= info$a0)
 
 # Perform SNP matching
-filtered_sumstats$chr <- as.character(filtered_sumstats$chr)
-map$chr <- as.character(map$chr)
+#filtered_sumstats$chr <- as.character(filtered_sumstats$chr)
+#map$chr <- as.character(map$chr)
 
 df_beta <- snp_match(filtered_sumstats, map)
 ```
