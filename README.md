@@ -216,7 +216,7 @@ set.seed(42)  # to get the same result every time
 multi_auto <- snp_ldpred2_auto(corr,
                                df_beta,
                                h2_init = ldsc_h2_est,
-                               vec_p_init = seq_log(1e-4, 0.9, length.out = NCORES), # 0.2 as tutorial, 0.9 as in the paper
+                               vec_p_init = seq_log(1e-4, 0.2, length.out = NCORES), # 0.2 as tutorial, 0.9 as in the paper
                                ncores = 42,
                                #use_MLE = FALSE,  # uncomment if you have convergence issues or when power is low (need v1.11.9)
                                allow_jump_sign = FALSE, shrink_corr = coef_shrink)
