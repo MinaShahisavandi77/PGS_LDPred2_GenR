@@ -90,8 +90,9 @@ map <- data.frame(chr= info$chr,
                   a0= info$a0)
 
 # Perform SNP matching
-#filtered_sumstats$chr <- as.character(filtered_sumstats$chr)
-#map$chr <- as.character(map$chr)
+#filtered_sumstats$chr <- as.numeric(filtered_sumstats$chr) only if you get the error in the next step
+#map$chr <- as.numeric(map$chr)
+
 
 df_beta <- snp_match(filtered_sumstats, map)
 ```
@@ -109,7 +110,7 @@ Filter based on the differences between standard deviations of allele frequencie
 # IF YOU WANT TO PERFORM QC OF SUMMARY STATISTICS #
 
 
-#info_snp <- tidyr::drop_na(tibble::as_tibble(info))
+#info_snp <- tidyr::drop_na(tibble::as_tibble(info)) # most of the time needs to be silent
 info_snp<- info[info$rsid %in% df_beta$rsid,]
 
 # Better to use af of GWAS and INFO scores as well (then can use 0.7 instead of 0.5 in L35)
@@ -119,8 +120,8 @@ sd_ldref <- with(info_snp, sqrt(2 * af_UKBB * (1 - af_UKBB)))
 sd_ss <- with(df_beta, 2 / sqrt(n_eff * beta_se^2 + beta^2))
 
 # IF CONTINUOUS TRAIT
-#sd_y = with(df_beta, sqrt(quantile(0.5 * (n_eff * beta_se^2 + beta^2), 0.01)))
-#sd_ss = with(df_beta, sd_y / sqrt(n_eff * beta_se^2 + beta^2))
+sd_y = with(df_beta, sqrt(quantile(0.5 * (n_eff * beta_se^2 + beta^2), 0.01)))
+sd_ss = with(df_beta, sd_y / sqrt(n_eff * beta_se^2 + beta^2))
 
 # Estimate SNPs to remove
 sd_ldref <- sd_ldref[1:length(sd_ss)]
