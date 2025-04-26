@@ -76,7 +76,7 @@ max_sample_size <- max(sumstats$n_eff)
 threshold <- 0.7 * max_sample_size
 # Filter variants that have a sample size below the threshold
 filtered_sumstats <- sumstats[sumstats$n_eff >= threshold, ]
-
+#filtered_variants<- sumstats$n_eff >= threshold
 # Output the filtered variants
 #write.table(filtered_variants, file="filtered_variants.txt", quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
 ```
@@ -95,6 +95,16 @@ map <- data.frame(chr= info$chr,
 
 
 df_beta <- snp_match(filtered_sumstats, map)
+df_beta <- snp_match(sumstats, map, join_by_pos = FALSE)  # use rsid instead of pos as a solution to previous error
+# If the error persists, try:
+map_mod<- snp_modifyBuild(info_snp=map,
+                          liftOver='/path/to/liftOver', # retrieved from: https://privefl.github.io/bigsnpr/reference/snp_modifyBuild.html
+                          from = "hg18",
+                          to = "hg19",
+                          check_reverse = TRUE)
+df_beta <- snp_match(sumstats, map_mod)
+# Alternatively, according to the documentation, try:
+df_beta <- snp_match(sumstats, map, join_by_pos = FALSE, match.min.prop=0.05)
 ```
 ---
 Step 2:QC
