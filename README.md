@@ -20,7 +20,7 @@ library(bigsnpr)
 ```
 
 Obtain HapMap3 SNPs and LD correlation matrix downloadable at https://ndownloader.figshare.com/files/25503788
-Use https://figshare.com/ndownloader/files/37802721 for HapMap3+ variants
+Use https://figshare.com/ndownloader/files/37802721 for HapMap3 variants
 
 ```
 info <- readRDS("/path/to/map.rds") # retrieved from https://figshare.com/articles/dataset/European_LD_reference/13034123?file=25503788
