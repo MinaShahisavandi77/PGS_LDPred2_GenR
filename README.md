@@ -6,7 +6,7 @@ This repository was made based on Polygenic scores and inference using LDpred2 t
 However, we made some modifications based on our needs for calculating the Polygenic Risk Score (PRS) in the Generation R study.
 To run this script you need : 
 - Summary statistics of the trait. This summary statistics should contain marginal effect sizes, their standard errors, and the corresponding sample size(s).
-- An LD (linkage disequilibrium) matrix derived from individuals sharing the same genetic ancestry as those included in the GWAS.Here we used the [HapMap3+](https://ndownloader.figshare.com/files/25503788) 
+- An LD (linkage disequilibrium) matrix derived from individuals sharing the same genetic ancestry as those included in the GWAS.Here we used the [HapMap3](https://ndownloader.figshare.com/files/25503788) 
 LD refrence.
 - Remember that partitioning LD matrices into independent LD blocks can enhance robustness and significantly improve computational efficiency based on [this papar](https://www.sciencedirect.com/science/article/pii/S2666247722000525?via%3Dihub).
 ---
